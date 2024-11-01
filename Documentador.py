@@ -10,8 +10,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 
-template_path = r'C:\Users\Computador\Documents\doc\TemplateDocument.docx'
-api_url = os.environ.get('API_URL') or 'http://18.229.136.181/api/getclientes.php'
+template_path = r'C:\Users\Usuário\Documents\doc\TemplateDocument.docx'
+api_url = os.environ.get('API_URL') or 'http://3.140.207.100/api/getclientes.php'
 
 
 temp_dir = tempfile.mkdtemp()
@@ -74,12 +74,21 @@ def process_template():
     modified_path = os.path.join(temp_dir, modified_filename)
     doc.save(modified_path)
 
-    # Handle multiple image uploads for "Prints" field
-    files = request.files.getlist('data6[]')
-    image_paths = [save_image(file) for file in files]
-    insert_images_after_placeholder(modified_path, image_paths)
+    # Handle multiple image uploads and their descriptions
+    images = request.files.getlist('images[]')
+    for index, image in enumerate(images):
+        description = request.form.get(f'image_description_{index}', '')
+        image_filename = f'image_{index}_{image.filename}'
+        image_path = os.path.join(temp_dir, image_filename)
+        image.save(image_path)
+        # Add image and description to the document
+        doc.add_paragraph(description)
+        doc.add_picture(image_path)
 
-    return send_file(modified_path, as_attachment=True)
+    # Save the final document with images
+    doc.save(modified_path)
+
+    return 'Template processed successfully'
     
 
 def replace_placeholder(doc, placeholder, replacement):
