@@ -81,9 +81,8 @@ def process_template():
         image_filename = f'image_{index}_{image.filename}'
         image_path = os.path.join(temp_dir, image_filename)
         image.save(image_path)
-        # Add image and description to the document
-        doc.add_paragraph(description)
-        doc.add_picture(image_path)
+        # Replace image and description placeholders in the document
+        replace_image_placeholder(doc, f'@image{index+1}', image_path, f'@description{index+1}', description)
 
     # Save the final document with images
     doc.save(modified_path)
@@ -111,6 +110,34 @@ def replace_placeholder(doc, placeholder, replacement):
                     for run in paragraph.runs:
                         if placeholder in run.text:
                             run.text = run.text.replace(placeholder, replacement)
+
+def replace_image_placeholder(doc, image_placeholder, image_path, description_placeholder, description):
+    for paragraph in doc.paragraphs:
+        if image_placeholder in paragraph.text:
+            # Clear the placeholder text
+            paragraph.clear()
+            # Add the image
+            run = paragraph.add_run()
+            run.add_picture(image_path, width=Inches(4.0))  # Adjust the width as needed
+            # Add the description
+            paragraph.add_run(description)
+            break
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    if image_placeholder in paragraph.text:
+                        # Clear the placeholder text
+                        paragraph.clear()
+                        # Add the image
+                        run = paragraph.add_run()
+                        run.add_picture(image_path, width=Inches(4.0))  # Adjust the width as needed
+                        # Add the description
+                        paragraph.add_run(description)
+                        break
+
+
 
 def save_image(file):
     image_folder = os.path.join(temp_dir)
