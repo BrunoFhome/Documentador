@@ -10,7 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 
-template_path = r'C:\Users\Usuário\Documents\doc\TemplateDocument.docx'
+template_path = os.path.join(os.getcwd(),'doc', 'TemplateDocument.docx')
 api_url = os.environ.get('API_URL') or 'http://3.140.207.100/api/getclientes.php'
 
 
@@ -88,7 +88,14 @@ def process_template():
     # Save the final document with images
     doc.save(modified_path)
 
-    return 'Template processed successfully'
+    # return 'Template processed successfully'
+    #return send_file(modified_path, as_attachment=True, attachment_filename=modified_filename)
+    return send_file(
+        modified_path,
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        as_attachment=True,
+        download_name=modified_filename
+    )
     
 
 def replace_placeholder(doc, placeholder, replacement):
