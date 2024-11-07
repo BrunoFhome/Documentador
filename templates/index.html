@@ -1,6 +1,5 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,38 +61,77 @@
         button:hover {
             background-color: #0056b3;
         }
-    </style>
 
-<script>
-
-    function filterClients() {
-        var input, filter, datalist, option;
-        input = document.getElementById("cliente");
-        filter = input.value.toUpperCase();
-        datalist = document.getElementById("clientsList");
-        option = datalist.getElementsByTagName("option");
-
-        for (var i = 0; i < option.length; i++) {
-            if (option[i].value.toUpperCase().indexOf(filter) > -1) {
-                option[i].style.display = "";
-            } else {
-                option[i].style.display = "none";
-            }
+        .input-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
         }
-    }
 
+        .input-group input[type="file"] {
+            flex: 2;
+        }
 
-</script>
+        .input-group input[type="text"] {
+            flex: 3;
+            margin-left: 10px;
+        }
 
+        .input-group button {
+            flex: 1;
+            margin-left: 10px;
+            background-color: #dc3545;
+        }
+
+        .input-group button:hover {
+            background-color: #c82333;
+        }
+
+        .image-description {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .image-description img {
+            width: 100px;
+            height: auto;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .image-description input {
+            flex: 3;
+            margin-right: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .remove-pair {
+            flex: 1;
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .remove-pair:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
-
 <body>
     <div class="container">
         <h1>Documentador</h1>
-        <form action="/process_template" method="post" enctype="multipart/form-data">
+        <form id="uploadForm" action="/process_template" method="post" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="chamado">Chamado:</label>
-                <input type="text" class="form-control" id="chamado" name="data1" required>
+                <label for="data1">Chamado:</label>
+                <input type="text" class="form-control" id="data1" name="data1" required>
             </div>
             <div class="form-group">
                 <label for="cliente">Cliente:</label>
@@ -104,7 +142,6 @@
                     {% endfor %}
                 </datalist>
             </div>
-
             <div class="form-group">
                 <label for="modulo">Módulo:</label>
                 <select class="form-control" id="modulo" name="data3" required>
@@ -140,41 +177,79 @@
                     <option value="wms">WMS</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label for="data">Data:</label>
-                <input type="date" class="form-control" id="data" name="data4" required>
+                <label for="data4">Data:</label>
+                <input type="date" class="form-control" id="data4" name="data4" required>
             </div>
-
             <div class="form-group">
-                <label for="descricao">Descrição:</label>
-                <textarea class="form-control" id="descricao" name="data5" required></textarea>
+                <label for="data5">Descrição:</label>
+                <textarea class="form-control" id="data5" name="data5" rows="3" required></textarea>
             </div>
-
-        <form action="/process_template" method="post" enctype="multipart/form-data">
-            <!-- Other form fields -->
-            <input type="file" name="images[]" multiple>
-            <div id="image-descriptions">
-                <!-- JavaScript will add description fields here -->
+            <div class="form-group">
+                <label for="data6">Imagens:</label>
+                <input type="file" class="form-control" id="data6" name="data6[]" accept="image/*" multiple>
             </div>
-            <button type="submit">Processar Template</button>
+            <div id="image-descriptions" class="form-group">
+                <!-- Description fields will be added here -->
+            </div>
+            <button type="submit" class="btn btn-success">Enviar</button>
         </form>
-
-        </form>
-        <script>
-            document.querySelector('input[name="images[]"]').addEventListener('change', function(event) {
-                const descriptionsDiv = document.getElementById('image-descriptions');
-                descriptionsDiv.innerHTML = ''; // Clear previous descriptions
-                Array.from(event.target.files).forEach((file, index) => {
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.name = `image_description_${index}`;
-                    input.placeholder = `Descrição para: ${file.name}`;
-                    descriptionsDiv.appendChild(input);
-                });
-            });
-        </script>
     </div>
-</body>
 
+    <script>
+        const imageInput = document.getElementById('data6');
+        const imageDescriptionsContainer = document.getElementById('image-descriptions');
+
+        imageInput.addEventListener('change', function() {
+            // Clear previous descriptions
+            imageDescriptionsContainer.innerHTML = '';
+
+            const files = Array.from(this.files);
+            files.forEach((file, index) => {
+                const descDiv = document.createElement('div');
+                descDiv.className = 'image-description';
+
+                // Create the image preview
+                const img = document.createElement('img');
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+
+                // Create the description input
+                const descInput = document.createElement('input');
+                descInput.type = 'text';
+                descInput.name = 'data7[]';
+                descInput.placeholder = 'Descrição da imagem';
+                descInput.required = true;
+
+                // Create the remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-pair';
+                removeBtn.textContent = 'Remover';
+                removeBtn.addEventListener('click', function() {
+                    // Remove the file from the file input
+                    const dt = new DataTransfer();
+                    const currentFiles = Array.from(imageInput.files);
+                    currentFiles.splice(index, 1);
+                    currentFiles.forEach(file => dt.items.add(file));
+                    imageInput.files = dt.files;
+
+                    // Remove the description field
+                    descDiv.remove();
+                });
+
+                // Append elements to the description div
+                descDiv.appendChild(img);
+                descDiv.appendChild(descInput);
+                descDiv.appendChild(removeBtn);
+
+                // Append the description div to the container
+                imageDescriptionsContainer.appendChild(descDiv);
+            });
+        });
+    </script>
+</body>
 </html>

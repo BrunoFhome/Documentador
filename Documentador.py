@@ -13,7 +13,6 @@ app = Flask(__name__)
 template_path = os.path.join(os.getcwd(),'doc', 'TemplateDocument.docx')
 api_url = os.environ.get('API_URL') or 'http://3.140.207.100/api/getclientes.php'
 
-
 temp_dir = tempfile.mkdtemp()
 
 scheduler = BackgroundScheduler()
@@ -74,28 +73,13 @@ def process_template():
     modified_path = os.path.join(temp_dir, modified_filename)
     doc.save(modified_path)
 
-    # Handle multiple image uploads and their descriptions
-    images = request.files.getlist('images[]')
-    for index, image in enumerate(images):
-        description = request.form.get(f'image_description_{index}', '')
-        image_filename = f'image_{index}_{image.filename}'
-        image_path = os.path.join(temp_dir, image_filename)
-        image.save(image_path)
-        # Replace image and description placeholders in the document
-        replace_image_placeholder(doc, f'@image{index+1}', image_path, f'@description{index+1}', description)
+    # Handle multiple image uploads with descriptions
+    image_files = request.files.getlist('data6[]')
+    image_descriptions = request.form.getlist('data7[]')
 
-    # Save the final document with images
-    doc.save(modified_path)
+    insert_all_images_with_description(modified_path, image_files, image_descriptions)
 
-    # return 'Template processed successfully'
-    #return send_file(modified_path, as_attachment=True, attachment_filename=modified_filename)
-    return send_file(
-        modified_path,
-        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        as_attachment=True,
-        download_name=modified_filename
-    )
-    
+    return send_file(modified_path, as_attachment=True)
 
 def replace_placeholder(doc, placeholder, replacement):
     for paragraph in doc.paragraphs:
@@ -111,34 +95,6 @@ def replace_placeholder(doc, placeholder, replacement):
                         if placeholder in run.text:
                             run.text = run.text.replace(placeholder, replacement)
 
-def replace_image_placeholder(doc, image_placeholder, image_path, description_placeholder, description):
-    for paragraph in doc.paragraphs:
-        if image_placeholder in paragraph.text:
-            # Clear the placeholder text
-            paragraph.clear()
-            # Add the image
-            run = paragraph.add_run()
-            run.add_picture(image_path, width=Inches(4.0))  # Adjust the width as needed
-            # Add the description
-            paragraph.add_run(description)
-            break
-
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    if image_placeholder in paragraph.text:
-                        # Clear the placeholder text
-                        paragraph.clear()
-                        # Add the image
-                        run = paragraph.add_run()
-                        run.add_picture(image_path, width=Inches(4.0))  # Adjust the width as needed
-                        # Add the description
-                        paragraph.add_run(description)
-                        break
-
-
-
 def save_image(file):
     image_folder = os.path.join(temp_dir)
     if not os.path.exists(image_folder):
@@ -148,22 +104,28 @@ def save_image(file):
     file.save(image_path)
     return image_path
 
-def insert_images_after_placeholder(doc_path, image_paths, placeholder='@prints'):
+def insert_all_images_with_description(doc_path, image_files, image_descriptions):
     doc = Document(doc_path)
-
+    
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
-                    if placeholder in paragraph.text:
+                    if '@prints' in paragraph.text:
                         # Clear the existing paragraph with the @prints placeholder
                         paragraph.clear()
 
-                        # Insert new paragraphs with images after the cleared one
-                        for image_path in image_paths:
+                        # Insert new paragraphs with images and descriptions after the cleared one
+                        for image_file, description in zip(image_files, image_descriptions):
+                            image_path = save_image(image_file)
+                            
                             p = cell.add_paragraph()
                             run = p.add_run()
                             run.add_picture(image_path, width=Inches(1.0))
+                            
+                            p = cell.add_paragraph(description)
+                        
+                        break
 
     # Save the modified document
     doc.save(doc_path)
